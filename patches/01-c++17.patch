@@ -1,0 +1,66 @@
+    Removed std::iterator being used as a base class
+
+    * C++17 deprecated using `std::iterator` as a base class. Custom
+      iterators just need to define a list of types in the iterator,
+      such as `value_type`, etc.
+
+--- a/CMakeLists.txt	2016-08-25 03:59:05.000000000 -0400
++++ b/CMakeLists.txt	2023-02-26 17:05:55.022499100 -0500
+@@ -1,4 +1,5 @@
+-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
++CMAKE_MINIMUM_REQUIRED(VERSION 3.11)
++
+ if(POLICY CMP0025)
+   # detect Apple's Clang
+   cmake_policy(SET CMP0025 NEW)
+@@ -11,6 +12,8 @@
+ 
+ PROJECT(RapidJSON CXX)
+ 
++set(CMAKE_CXX_STANDARD 17)
++
+ set(LIB_MAJOR_VERSION "1")
+ set(LIB_MINOR_VERSION "1")
+ set(LIB_PATCH_VERSION "0")
+
+--- a/include/rapidjson/document.h	2016-08-25 03:59:05.000000000 -0400
++++ b/include/rapidjson/document.h	2023-02-26 21:38:31.020312800 -0500
+@@ -98,16 +98,19 @@
+     \see GenericMember, GenericValue::MemberIterator, GenericValue::ConstMemberIterator
+  */
+ template <bool Const, typename Encoding, typename Allocator>
+-class GenericMemberIterator
+-    : public std::iterator<std::random_access_iterator_tag
+-        , typename internal::MaybeAddConst<Const,GenericMember<Encoding,Allocator> >::Type> {
++class GenericMemberIterator {
++
++    using iterator_category = std::random_access_iterator_tag;
++    using value_type = typename internal::MaybeAddConst<Const,GenericMember<Encoding,Allocator> >::Type;
++    using difference_type   = ptrdiff_t;
++    using pointer           = value_type*;
++    using reference         = value_type&;
+ 
+     friend class GenericValue<Encoding,Allocator>;
+     template <bool, typename, typename> friend class GenericMemberIterator;
+ 
+     typedef GenericMember<Encoding,Allocator> PlainType;
+     typedef typename internal::MaybeAddConst<Const,PlainType>::Type ValueType;
+-    typedef std::iterator<std::random_access_iterator_tag,ValueType> BaseType;
+ 
+ public:
+     //! Iterator type itself
+@@ -118,11 +121,11 @@
+     typedef GenericMemberIterator<false,Encoding,Allocator> NonConstIterator;
+ 
+     //! Pointer to (const) GenericMember
+-    typedef typename BaseType::pointer         Pointer;
++    typedef                    pointer         Pointer;
+     //! Reference to (const) GenericMember
+-    typedef typename BaseType::reference       Reference;
++    typedef                    reference       Reference;
+     //! Signed integer type (e.g. \c ptrdiff_t)
+-    typedef typename BaseType::difference_type DifferenceType;
++    typedef                    difference_type DifferenceType;
+ 
+     //! Default constructor (singular value)
+     /*! Creates an iterator pointing to no element.

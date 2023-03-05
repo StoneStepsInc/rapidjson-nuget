@@ -1,0 +1,161 @@
+#
+# The version part is immutable in the name, but the package revision
+# component after the dash should be kept in sync with `PKG_REV`.
+# GitHub doesn't allow variables in the workflow names, so this cannot
+# be automated.
+#
+# For new RapidJSON versions, rename this file with a new version name
+# to restart build numbers from `1`. This is necessary because GitHub
+# maintains build numbers per workflow file name.
+#
+name: rapidjson v1.1.0-1
+
+#
+# When `publish-package` is set to `yes`, the workflow will build
+# the package and publish it to nuget.org. Otherwise, a package
+# will be built as an artifact and may be downloaded via GitHub UI.
+#
+# Published Nuget package will use the 4th version component as a
+# package revision number because Nuget lacks package revision
+# support.
+#
+# Without publishing, a Nuget package will be uploaded as an artifact
+# of the workflow run and will be named using a pre-release version,
+# which is an unfortunate workaround for a lack of build promotion
+# support between GitHub and Nuget. This means that true pre-release
+# packages will conflict with CI packages, but for this repository
+# this is not an issue that will ever need to be addressed.
+#
+on:
+  workflow_dispatch:
+    inputs:
+      publish-package:
+        description: Publish Nuget Package (yes/no)?
+        required: false
+
+#
+# For each new RapidJSON release, change these variables:
+#
+#   * PKG_VER
+#   * RAPIDJSON_FNAME
+#   * RAPIDJSON_DNAME
+#   * RAPIDJSON_SHA256
+#
+# Check that the directory name within the downloaded source archive
+# matches the name referenced in `RAPIDJSON_DNAME`.
+#
+# For each change in `PKG_VER`, `PKG_REV` must be reset to `1` (one).
+#
+# Package revision should be incremented by one every time package
+# content is changed in any way, such as changing compiler options,
+# adding or removing files, changing any text in README files, etc.
+#
+env:
+  PKG_VER: 1.1.0
+  PKG_REV: 1
+  BUILD_NUMBER: ${{ github.run_number }}
+
+  #
+  # GitHub won't allow referencing `env` within this section, which
+  # means that in order to reference the RapidJSON source directory we
+  # need to concatenate variables in-place (e.g. `rapidjson-${{ env.PKG_VER }}`)
+  # or to define them in each step where the source directory is
+  # referenced, which is what's done in this pipeline (`RAPIDJSON_DNAME`).
+  #
+  RAPIDJSON_FNAME: rapidjson-1.1.0.tar.gz
+  RAPIDJSON_DNAME: rapidjson-1.1.0
+  RAPIDJSON_SHA256: bf7ced29704a1e696fbccf2a2b4ea068e7774fa37f6d7dd4039d0787f8bed98e
+
+  # for VS Community Edition, replace `Enterprise` with `Community` in the path
+  VCVARSALL: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall'
+
+  # Nuget Gallery (www.nuget.org) publish URL
+  NUGET_PUB_URL: https://api.nuget.org/v3/index.json
+
+defaults:
+  run:
+    shell: cmd
+
+jobs:
+  make-rapidjson:
+    name: Make RapidJSON
+    runs-on: windows-2022
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Download RapidJSON
+      run: curl --location --output ${{ env.RAPIDJSON_FNAME }} https://github.com/Tencent/rapidjson/archive/refs/tags/v${{ env.PKG_VER }}.tar.gz
+    
+    - name: Verify RapidJSON checksum
+      run: 7z h -scrcSHA256 ${{ env.RAPIDJSON_FNAME }} | findstr /C:"SHA256 for data" | call devops\check-sha256 "${{ env.RAPIDJSON_SHA256 }}"
+
+    - name: Extract RapidJSON
+      run: |
+        tar xzf ${{ env.RAPIDJSON_FNAME }}
+
+    - name: Patch source
+      working-directory: ${{ env.RAPIDJSON_DNAME }}
+      run: |
+        patch -p1 --unified --input ..\patches\01-c++17.patch
+        patch -p1 --unified --input ..\patches\02-cmake-install-prefix.patch
+
+    - name: Generate projects
+      working-directory: ${{ env.RAPIDJSON_DNAME }}
+      run: |
+        call "${{ env.VCVARSALL }}" x64
+        cmake -S . -B build -A x64 ^
+            -DRAPIDJSON_BUILD_DOC=OFF ^
+            -DRAPIDJSON_BUILD_EXAMPLES=OFF ^
+            -DRAPIDJSON_BUILD_TESTS=OFF ^
+            -DRAPIDJSON_BUILD_THIRDPARTY_GTEST=OFF ^
+            -DRAPIDJSON_HAS_STDSTRING=ON
+
+    - name: Build x64/Debug
+      working-directory: ${{ env.RAPIDJSON_DNAME }}
+      run: |
+        call "${{ env.VCVARSALL }}" x64
+        cmake --build build --config Debug
+
+    - name: Build x64/Release
+      working-directory: ${{ env.RAPIDJSON_DNAME }}
+      run: |
+        call "${{ env.VCVARSALL }}" x64
+        cmake --build build --config Release
+
+    - name: Collect artifacts
+      working-directory: ${{ env.RAPIDJSON_DNAME }}
+      run: |
+        mkdir ..\nuget\licenses
+        copy license.txt ..\nuget\licenses\
+
+        mkdir ..\nuget\build\native\include\rapidjson
+        xcopy /Y /S include\rapidjson\* ..\nuget\build\native\include\rapidjson\
+
+      # this is an unconventional use of the pre-release version - see README.md
+    - name: Make CI Nuget package
+      if: ${{ github.event.inputs.publish-package != 'yes' }}
+      run: |
+        nuget pack nuget\StoneSteps.RapidJSON.VS2022.Static.nuspec -Suffix "ci.%BUILD_NUMBER%" -Version ${{ env.PKG_VER }}.${{ env.PKG_REV }}
+
+    - name: Upload CI Nuget package
+      if: ${{ github.event.inputs.publish-package != 'yes' }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: RapidJSON CI Nuget package
+        path: StoneSteps.RapidJSON.VS2022.Static.${{ env.PKG_VER }}.${{ env.PKG_REV }}-ci.${{ env.BUILD_NUMBER }}.nupkg
+
+      #
+      # Use `-Version` explicitly to override the version in the manifest,
+      # so we can usurp the 4th version component for the package revision.
+      #
+    - name: Make Nuget package
+      if: ${{ github.event.inputs.publish-package == 'yes' }}
+      run: |
+        nuget pack nuget\StoneSteps.RapidJSON.VS2022.Static.nuspec -Version ${{ env.PKG_VER }}.${{ env.PKG_REV }}
+
+    - name: Publish Nuget package
+      if: ${{ github.event.inputs.publish-package == 'yes' }}
+      run: |
+        nuget push StoneSteps.RapidJSON.VS2022.Static.${{ env.PKG_VER }}.${{ env.PKG_REV }}.nupkg -Source ${{ env.NUGET_PUB_URL }} -ApiKey "${{ secrets.NUGET_API_KEY }}" -NonInteractive

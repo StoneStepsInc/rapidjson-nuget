@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>StoneSteps.RapidJSON.VS2022.Static</id>
+    <version>1.1.0</version>
+    <authors>Tencent, Milo Yip (RapidJSON)</authors>
+    <owners>Stone Steps (package)</owners>
+    <license type="file">licenses\license.txt</license>
+    <projectUrl>https://github.com/StoneStepsInc/rapidjson-nuget</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A fast JSON parser/generator for C++ with both SAX/DOM style API</description>
+    <releaseNotes>
+Package Notes:
+
+  * RapidJSON is an header-only package that contains no static or dynamic libraries.
+  * The source code has been modified to compile in C++17.
+  * See README.md for more information.
+
+See RapidJSON release notes for version details:
+
+https://github.com/Tencent/rapidjson/releases/tag/v1.1.0
+    </releaseNotes>
+    <copyright>Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.</copyright>
+    <tags>RapidJSON,JSON,native,library</tags>
+  </metadata>
+  <files>
+   <file src="README.txt" target=""/>
+   <file src="licenses\license.txt" target="licenses\license.txt"/>
+   <file src="build\**\*" target="build"/>
+  </files>
+</package>

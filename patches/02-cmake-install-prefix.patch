@@ -1,0 +1,35 @@
+    Removed explicit CMAKE_INSTALL_PREFIX that breaks --install
+
+    * Using `CMAKE_INSTALL_PREFIX` explicitly in CMake statements
+      results in the `--prefix` option being ignored when build
+      output is being installed with the `--install` option.
+
+--- a/CMakeLists.txt	2023-02-27 21:25:05.192495700 -0500
++++ b/CMakeLists.txt	2023-02-27 21:24:04.471034800 -0500
+@@ -96,14 +96,14 @@
+ endif()
+ 
+ #add extra search paths for libraries and includes
+-SET(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "The directory the headers are installed in")
+-SET(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE STRING "Directory where lib will install")
+-SET(DOC_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/doc/${PROJECT_NAME}" CACHE PATH "Path to the documentation")
++SET(INCLUDE_INSTALL_DIR "include" CACHE PATH "The directory the headers are installed in")
++SET(LIB_INSTALL_DIR "lib" CACHE STRING "Directory where lib will install")
++SET(DOC_INSTALL_DIR "share/doc/${PROJECT_NAME}" CACHE PATH "Path to the documentation")
+ 
+ IF(UNIX OR CYGWIN)
+     SET(_CMAKE_INSTALL_DIR "${LIB_INSTALL_DIR}/cmake/${PROJECT_NAME}")
+ ELSEIF(WIN32)
+-    SET(_CMAKE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/cmake")
++    SET(_CMAKE_INSTALL_DIR "cmake")
+ ENDIF()
+ SET(CMAKE_INSTALL_DIR "${_CMAKE_INSTALL_DIR}" CACHE PATH "The directory cmake fiels are installed in")
+ 
+--- a/example/CMakeLists.txt	2016-08-25 03:59:05.000000000 -0400
++++ b/example/CMakeLists.txt	2023-02-27 21:23:26.402045500 -0500
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 2.8)
++cmake_minimum_required(VERSION 3.11)
+ 
+ if(POLICY CMP0054)
+   cmake_policy(SET CMP0054 NEW)
