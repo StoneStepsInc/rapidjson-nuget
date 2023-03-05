@@ -1,0 +1,23 @@
+# Visual Studio files
+/.vs/
+
+# downloaded RapidJSON package file
+/RapidJSON-*.tar.gz
+
+# extracted RapidJSON source
+/RapidJSON-*/
+
+# collected RapidJSON build artifacts
+/nuget/build/native/include/
+/nuget/build/native/lib/
+/nuget/licenses/
+
+# locally-built Nuget package
+/StoneSteps.RapidJSON.VS2022.Static.*.nupkg
+
+# sample app for testing the Nuget package
+/sample-RapidJSON/.vs/
+/sample-RapidJSON/sample-rapidjson.vcxproj.user
+/sample-RapidJSON/packages/
+/sample-RapidJSON/packages.config
+/sample-RapidJSON/x64/
