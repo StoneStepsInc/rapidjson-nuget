@@ -23,11 +23,12 @@ options:
   * `RAPIDJSON_HAS_STDSTRING=ON`
 
 Following RapidJSON flags will be enabled in the Visual Studio
-project including this package:
+project using this package:
 
   * `RAPIDJSON_HAS_CXX11_RVALUE_REFS`
   * `RAPIDJSON_HAS_STDSTRING`
   * `RAPIDJSON_HAS_CXX11_NOEXCEPT`
+  * `RAPIDJSON_HAS_CXX11_RANGE_FOR`
 
 ## RapidJSON Changes
 
