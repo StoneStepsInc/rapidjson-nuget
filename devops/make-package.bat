@@ -32,7 +32,7 @@ if ERRORLEVEL 1 (
   goto :EOF
 )
 
-tar xzf %RAPIDJSON_FNAME%
+tar -xzf %RAPIDJSON_FNAME%
 
 cd %RAPIDJSON_DNAME%
 

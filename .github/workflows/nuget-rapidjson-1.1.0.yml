@@ -93,7 +93,7 @@ jobs:
 
     - name: Extract RapidJSON
       run: |
-        tar xzf ${{ env.RAPIDJSON_FNAME }}
+        tar -xzf ${{ env.RAPIDJSON_FNAME }}
 
     - name: Patch source
       working-directory: ${{ env.RAPIDJSON_DNAME }}
