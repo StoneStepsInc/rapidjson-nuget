@@ -1,5 +1,6 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
+#include <rapidjson/pointer.h>
 #include <rapidjson/reader.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/error/en.h>
@@ -220,6 +221,39 @@ void print_json_doc(rapidjson::Document&& json_doc)
 int main(int argc, const char* argv[])
 {
    try {
+      rapidjson::MemoryPoolAllocator ma;
+      rapidjson::Document json_doc2(&ma);
+
+      // adds `"c": null`
+      //rapidjson::Pointer("/a/b/c").Create(json_doc2);
+      rapidjson::Pointer("/a/b/c/d").Set(json_doc2, rapidjson::Value(123));
+
+      rapidjson::Pointer("/a/x/c/q").GetWithDefault(json_doc2, rapidjson::Value(rapidjson::kArrayType), json_doc2.GetAllocator());
+      rapidjson::Value& v = rapidjson::Pointer("/a/x/c/q").GetWithDefault(json_doc2, rapidjson::Value(rapidjson::kArrayType), json_doc2.GetAllocator());
+      rapidjson::Pointer("/-").Set(v, "ABC", json_doc2.GetAllocator());
+      rapidjson::Pointer("/-").Set(v, "XYZ", json_doc2.GetAllocator());
+
+      //json_doc2 = rapidjson::Document();
+
+      rapidjson::Value a(rapidjson::kArrayType);
+      a.PushBack(1, json_doc2.GetAllocator());
+      a.PushBack(2, json_doc2.GetAllocator());
+      a.PushBack(3, json_doc2.GetAllocator());
+      rapidjson::Pointer("/a/b/c/e").Set(json_doc2, a);
+
+      rapidjson::Value a2(rapidjson::kArrayType);
+      a2.PushBack("x", json_doc2.GetAllocator());
+      a2.PushBack("y", json_doc2.GetAllocator());
+      a2.PushBack("z", json_doc2.GetAllocator());
+      rapidjson::Pointer("/a/b/c/h").Set(json_doc2, a2);
+
+      rapidjson::StringBuffer sb;
+      rapidjson::Writer<rapidjson::StringBuffer> w(sb);
+
+      json_doc2.Accept(w);
+
+      std::string s = sb.GetString();
+
       // construct a JSON document in memory
       rapidjson::Document json_doc = make_json_doc(make_json_with_writer());
 
